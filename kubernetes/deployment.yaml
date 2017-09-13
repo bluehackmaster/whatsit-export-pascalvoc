@@ -1,0 +1,21 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: whatsit-export-pascalvoc
+  namespace: whatsit
+spec:
+  replicas:
+  template:
+    metadata:
+      labels:
+        role: whatsit-export-pascalvoc
+        name: whatsit-export-pascalvoc
+    spec:
+      containers:
+       image: gcr.io/whatsit-174908/whatsit-index-video:latest
+        name: whatsit-export-pascalvoc
+        env:
+         name: PROJECTID
+          value: whatsit-174908
+        ports:
+         containerPort: 6379
