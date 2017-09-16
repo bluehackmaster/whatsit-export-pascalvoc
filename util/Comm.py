@@ -1,27 +1,29 @@
+import math
 import os
 import shutil
-from . import Config
-from xml.etree.ElementTree import Element, SubElement
 import xml.etree.ElementTree as ET
+from xml.etree.ElementTree import Element, SubElement
 
-CONFIG_TEMP_PATH = Config.getValue('FILE', 'TEMP_PATH')
 
-
-# TODO : Convert to class from this logic for saving project name(to reuse).
+# TODO : Convert to class from this for saving project name(to reuse).
 
 # noinspection PyPep8Naming
-def checkAndCreateDirectory(paths):
+def check_and_create_directory(paths):
     for path in paths:
         if os.path.exists(path):
             shutil.rmtree(path)
         os.mkdir(path)
 
 
-def makeProjectDirectory(project):
-    PROJECT_TEMP_PATH = os.path.join(CONFIG_TEMP_PATH, project)
+def delete_directory(path):
+    shutil.rmtree(path)
+
+
+def make_project_directory(path, project):
+    PROJECT_TEMP_PATH = os.path.join(path, project)
     folders = ['data', 'models', 'models/model', 'models/model/eval', 'models/model/train', 'dataset']
 
-    checkAndCreateDirectory([CONFIG_TEMP_PATH, PROJECT_TEMP_PATH])
+    check_and_create_directory([path, PROJECT_TEMP_PATH])
 
     for folder in folders:
         os.mkdir(os.path.join(PROJECT_TEMP_PATH, folder))
@@ -29,8 +31,8 @@ def makeProjectDirectory(project):
     return PROJECT_TEMP_PATH
 
 
-def makeDatasetDirectory(project, datasets):
-    PROJECT_TEMP_PATH = os.path.join(CONFIG_TEMP_PATH, project)
+def make_datasets_directory(path, project, datasets):
+    PROJECT_TEMP_PATH = os.path.join(path, project)
 
     for dataset in datasets:
         folders = ['dataset/' + dataset, 'dataset/' + dataset + '/Annotations',
@@ -41,12 +43,12 @@ def makeDatasetDirectory(project, datasets):
             os.mkdir(os.path.join(PROJECT_TEMP_PATH, folder))
 
 
-def writeFile(file_path, data):
+def write_file(file_path, data):
     with open(file_path, 'wb') as file:
         file.write(data)
 
 
-def makelabelMap(labels):
+def make_label_map(labels):
     rslt = ''
 
     for idx, val in enumerate(labels):
@@ -54,7 +56,8 @@ def makelabelMap(labels):
 
     return rslt.encode('utf-8')
 
-def makeImageData(dataset, image, objects):
+
+def make_image_data(dataset, image, objects):
     annotation = Element('annotation')
     SubElement(annotation, 'folder').text = dataset
     SubElement(annotation, 'filename').text = image
@@ -74,15 +77,15 @@ def makeImageData(dataset, image, objects):
     annotation.append(size)
 
     for idx, object in enumerate(objects):
-        annotation.append(makeImageObject(idx))
+        annotation.append(make_image_object(idx))
 
     return ET.tostring(annotation, encoding='UTF-8', method='xml')
 
 
-def makeImageObject(abc):
+def make_image_object(abc):
     object = Element('object')
 
-    SubElement(object, 'name').text = 'bicycle'+str(abc)
+    SubElement(object, 'name').text = 'bicycle' + str(abc)
     SubElement(object, 'pose').text = 'Frontal'
     SubElement(object, 'truncated').text = '1'
     SubElement(object, 'occluded').text = '0'
@@ -96,11 +99,18 @@ def makeImageObject(abc):
 
     object.append(bndbox)
 
-
     return object
 
 
+def make_train_and_val(files):
+    total_count = len(files)
+    train_count = math.trunc(total_count * 0.8)
+    trains = []
+    vals = []
+    for idx, val in enumerate(files):
+        if idx < train_count:
+            trains.append(val)
+        else:
+            vals.append(val)
 
-
-
-
+    return trains, vals
