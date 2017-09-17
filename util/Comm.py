@@ -129,3 +129,19 @@ def make_train_and_val(files):
             vals.append(val)
 
     return trains, vals
+
+
+def get_bnd_box(polygons):
+    x_min = y_min = sys.maxsize
+    x_max = y_max = 0
+    for polygon in polygons:
+        if polygon[0] < x_min:
+            x_min = polygon[0]
+        elif polygon[0] > x_max:
+            x_max = polygon[0]
+
+        if polygon[1] < y_min:
+            y_min = polygon[1]
+        elif polygon[1] > y_max:
+            y_max = polygon[1]
+    return x_min, x_max, y_min, y_max
