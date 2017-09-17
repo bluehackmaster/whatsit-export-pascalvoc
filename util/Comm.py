@@ -19,6 +19,21 @@ def delete_directory(path):
     shutil.rmtree(path)
 
 
+def delete_file(path):
+    os.remove(path)
+
+
+def insert_label(origin, labels):
+    for label in labels:
+        try:
+            if origin.index(label) == 0:
+                print(label + ' is in list')
+        except ValueError:
+            origin.append(label)
+
+    return origin
+
+
 def make_project_directory(path, project):
     PROJECT_TEMP_PATH = os.path.join(path, project)
     folders = ['data', 'models', 'models/model', 'models/model/eval', 'models/model/train', 'dataset']
@@ -31,10 +46,10 @@ def make_project_directory(path, project):
     return PROJECT_TEMP_PATH
 
 
-def make_datasets_directory(path, project, datasets):
+def make_datasets_directory(path, project, dataset):
     PROJECT_TEMP_PATH = os.path.join(path, project)
-
-    for dataset in datasets:
+    print(dataset)
+    if dataset is not None:
         folders = ['dataset/' + dataset, 'dataset/' + dataset + '/Annotations',
                    'dataset/' + dataset + '/JPEGImages', 'dataset/' + dataset + '/ImageSets',
                    'dataset/' + dataset + '/ImageSets/Main']
