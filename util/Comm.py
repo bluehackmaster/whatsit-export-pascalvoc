@@ -1,6 +1,7 @@
 import math
 import os
 import shutil
+import sys
 import xml.etree.ElementTree as ET
 from xml.etree.ElementTree import Element, SubElement
 
@@ -15,12 +16,18 @@ def check_and_create_directory(paths):
         os.mkdir(path)
 
 
-def delete_directory(path):
-    shutil.rmtree(path)
+def delete_directory(paths):
+    for path in paths:
+        shutil.rmtree(path)
 
 
 def delete_file(path):
     os.remove(path)
+
+
+def delete_files(paths):
+    for path in paths:
+        delete_file(path)
 
 
 def insert_label(origin, labels):
@@ -63,6 +70,10 @@ def write_file(file_path, data):
         file.write(data)
 
 
+def move_file(original, destination):
+    shutil.move(original, destination)
+
+
 def make_label_map(labels):
     rslt = ''
 
@@ -72,11 +83,11 @@ def make_label_map(labels):
     return rslt.encode('utf-8')
 
 
-def make_image_data(dataset, image, objects):
+def make_image_data(dataset, image):
     annotation = Element('annotation')
     SubElement(annotation, 'folder').text = dataset
-    SubElement(annotation, 'filename').text = image
-    SubElement(annotation, 'segmented').text = '0'
+    SubElement(annotation, 'filename').text = image['name']
+    SubElement(annotation, 'segmented').text = image['segmented']
 
     source = Element('source')
     SubElement(source, 'database').text = 'The VOC2008 Database'
@@ -84,37 +95,37 @@ def make_image_data(dataset, image, objects):
     SubElement(source, 'image').text = '아'
 
     size = Element('size')
-    SubElement(size, 'width').text = '371'
-    SubElement(size, 'height').text = '500'
+    SubElement(size, 'width').text = str(image['w'])
+    SubElement(size, 'height').text = str(image['h'])
     SubElement(size, 'depth').text = '3'
 
     annotation.append(source)
     annotation.append(size)
 
-    for idx, object in enumerate(objects):
-        annotation.append(make_image_object(idx))
-
+    for __object in image['objects']:
+        annotation.append(make_image_object(__object))
     return ET.tostring(annotation, encoding='UTF-8', method='xml')
 
 
-def make_image_object(abc):
-    object = Element('object')
+def make_image_object(__object):
+    object_data = Element('object')
 
-    SubElement(object, 'name').text = 'bicycle' + str(abc)
-    SubElement(object, 'pose').text = 'Frontal'
-    SubElement(object, 'truncated').text = '1'
-    SubElement(object, 'occluded').text = '0'
-    SubElement(object, 'difficult').text = '0'
+    SubElement(object_data, 'name').text = __object['_id']
+    SubElement(object_data, 'pose').text = __object['pose']
+    SubElement(object_data, 'truncated').text = str(__object['truncated'])
+    SubElement(object_data, 'occluded').text = str(__object['occluded'])
+    SubElement(object_data, 'difficult').text = str(__object['difficult'])
 
     bndbox = Element('bndbox')
-    SubElement(bndbox, 'xmin').text = '64'
-    SubElement(bndbox, 'ymin').text = '390'
-    SubElement(bndbox, 'xmax').text = '354'
-    SubElement(bndbox, 'ymax').text = '500'
+    x_min, x_max, y_min, y_max = get_bnd_box(__object['polygons'])
+    SubElement(bndbox, 'xmin').text = str(x_min)
+    SubElement(bndbox, 'xmax').text = str(x_max)
+    SubElement(bndbox, 'ymin').text = str(y_min)
+    SubElement(bndbox, 'ymax').text = str(y_max)
 
-    object.append(bndbox)
+    object_data.append(bndbox)
 
-    return object
+    return object_data
 
 
 def make_train_and_val(files):

@@ -10,7 +10,6 @@ class Pascal:
         self.__project_id = project_id
 
     def execute(self):
-        IMAGE = ['image1.jpg', 'image2.jpg']
         labels = []
 
         response_data = \
@@ -19,42 +18,48 @@ class Pascal:
         project_name = response_data['name']
         data_sets = response_data['datasets']
 
-        print('Create directories')
         project_path = Comm.make_project_directory(self.__path, project_name)
+        print('Created directories: ' + project_path)
 
         for data_set in data_sets[0]:
-            print(data_set)
-            # for dataset in DATASETS:
-            #     for image in IMAGE:
-            #         Comm.write_file(os.path.join(PROJECT_PATH, 'dataset/' + dataset + '/Annotations/' + image + '.xml'),
-            #                         Comm.make_image_data(dataset, image, DATASETS))
-
-
             for data in data_set['data']:
                 try:
+                    data_set_name = data['name']
+                    data_set_path = os.path.join(project_path, 'dataset/' + data['name'])
+                    print('creating data set folder')
+                    Comm.make_datasets_directory(self.__path, project_name, data_set_name)
 
-                    Comm.make_datasets_directory(self.__path, project_name, data['name'])
+                    # TODO 압축 / 압축 해제 모듈화 작업
+                    # save_location = Trans.download_file(
+                    #     os.path.join(data_set_path, '/temp.zip'),
+                    #     data['frames'])
+                    save_location = '/Users/bluehack/Downloads/gonghyojin_final.zip'
+                    zips = zipfile.ZipFile(save_location)
 
-                    save_location = Trans.download_file(
-                        os.path.join(project_path, 'dataset/' + data['name'] + '/temp.zip'),
-                        data['frames'])
-                    zip = zipfile.ZipFile(save_location)
-                    zip.extractall(os.path.join(project_path, 'dataset/' + data['name'] + '/JPEGImages'))
-                    zip.close()
-                    print('unzip ' + save_location)
-                    Comm.delete_file(save_location)
+                    extract_path = os.path.join(data_set_path, 'temp')
+                    zips.extractall(extract_path)
+                    zips.close()
 
                     for image in data['images']:
-                        labels = Comm.insert_label(labels, image['labels'])
-                except:
-                    print('Excepted')
+                        if len(image['objects']) > 0:
+                            image_file_name = image['name']
+                            Comm.move_file(os.path.join(extract_path, image_file_name),
+                                           os.path.join(os.path.join(data_set_path, 'JPEGImages'), image_file_name))
+                            labels = Comm.insert_label(labels, image['labels'])
+                            Comm.write_file(
+                                os.path.join(project_path,
+                                             'dataset/' + data_set_name + '/Annotations/' + image_file_name + '.xml'),
+                                Comm.make_image_data(data_set_name, image))
 
-        # for a in range(3, 101):
-        #     IMAGE.append('image' + str(a) + '.jpg')
+                    Comm.delete_directory([extract_path])
 
-        # Creating a 'label_map.pbtxt' file
+                except Exception as ex:
+                    print('Excepted' + ex)
+
+        # Creating a 'label_map.pbtxt' fileR
         Comm.write_file(os.path.join(project_path, 'data/label_map.pbtxt'), Comm.make_label_map(labels))
 
+        print('Compressing export files.')
         zip = zipfile.ZipFile(os.path.join(self.__path, project_name + '.zip'), 'w')
 
         for folder, subfolders, files in os.walk(project_path):
@@ -64,10 +69,12 @@ class Pascal:
                           compress_type=zipfile.ZIP_DEFLATED)
         zip.close()
 
+        print('Uploading the export zip file to bucket.')
         file_url = Trans.upload_file_to_bucket('whatsit-dataset-export', zip.filename,
                                                key=project_name + '/' + project_name + '.zip', is_public=False)
 
-        Comm.delete_directory(self.__path)
+        print('Deleting temporary files for exporting.')
+        Comm.delete_directory([self.__path])
         print(file_url)
 
         #
