@@ -8,7 +8,6 @@ from xml.etree.ElementTree import Element, SubElement
 
 # TODO : Convert to class from this for saving project name(to reuse).
 
-# noinspection PyPep8Naming
 def check_and_create_directory(paths):
     for path in paths:
         if os.path.exists(path):
