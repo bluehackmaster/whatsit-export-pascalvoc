@@ -14,7 +14,6 @@ def download_file(save_path, file_url):
     """ Download file from http url link """
 
     r = requests.get(file_url)  # create HTTP response object
-
     with open(save_path, 'wb') as f:
         f.write(r.content)
 
@@ -55,7 +54,7 @@ def download_file_from_bucket(bucket, file_path, key):
 def request_service(method, url, params):
     """ Request to whatsit API server"""
     if method == 'PUT':
-        resp = requests.put(url=url, params=params, timeout=60)
+        resp = requests.put(url=url, json=params, timeout=60)
     elif method == 'POST':
         resp = requests.post(url=url, params=params, timeout=60)
     else:

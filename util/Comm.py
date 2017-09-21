@@ -3,6 +3,7 @@ import os
 import shutil
 import sys
 import xml.etree.ElementTree as ET
+import zipfile
 from xml.etree.ElementTree import Element, SubElement
 
 
@@ -33,10 +34,15 @@ def insert_label(origin, labels):
     for label in labels:
         try:
             if origin.index(label) == 0:
-                print(label + ' is in list')
+                pass
         except ValueError:
             origin.append(label)
 
+    return origin
+
+
+def insert_image_sets(origin, label, image_file_name):
+    origin[label].append(image_file_name)
     return origin
 
 
@@ -82,7 +88,16 @@ def make_label_map(labels):
     return rslt.encode('utf-8')
 
 
-def make_image_data(dataset, image):
+def make_image_sets(files):
+    result = ''
+
+    for val in files:
+        result += val + '\n'
+
+    return result.encode('utf-8')
+
+
+def make_image_data(dataset, image, __labels):
     annotation = Element('annotation')
     SubElement(annotation, 'folder').text = dataset
     SubElement(annotation, 'filename').text = image['name']
@@ -102,14 +117,15 @@ def make_image_data(dataset, image):
     annotation.append(size)
 
     for __object in image['objects']:
-        annotation.append(make_image_object(__object))
-    return ET.tostring(annotation, encoding='UTF-8', method='xml')
+        object_data, __labels = make_image_object(__object, image['name'], __labels)
+        annotation.append(object_data)
+
+    return ET.tostring(annotation, encoding='UTF-8', method='xml'), __labels
 
 
-def make_image_object(__object):
+def make_image_object(__object, __file_name, __labels):
     object_data = Element('object')
-
-    SubElement(object_data, 'name').text = __object['_id']
+    SubElement(object_data, 'name').text = __object['label']
     SubElement(object_data, 'pose').text = __object['pose']
     SubElement(object_data, 'truncated').text = str(__object['truncated'])
     SubElement(object_data, 'occluded').text = str(__object['occluded'])
@@ -124,7 +140,9 @@ def make_image_object(__object):
 
     object_data.append(bndbox)
 
-    return object_data
+    __labels = insert_image_sets(__labels, __object['label'], __file_name)
+
+    return object_data, __labels
 
 
 def make_train_and_val(files):
@@ -155,3 +173,26 @@ def get_bnd_box(polygons):
         elif polygon[1] > y_max:
             y_max = polygon[1]
     return x_min, x_max, y_min, y_max
+
+
+def uncompress_files(original, destination):
+    with zipfile.ZipFile(original) as zips:
+        extract_path = os.path.join(destination)
+        zips.extractall(extract_path)
+
+
+def compress_files(original, destination):
+    empty_dirs = []
+    with zipfile.ZipFile(destination, 'w') as zips:
+        for folder, subfolders, files in os.walk(original):
+            empty_dirs.extend([os.path.relpath(os.path.join(folder, dirs), original) for dirs in subfolders if
+                               not os.listdir(os.path.join(folder, dirs))])
+            for file in files:
+                zips.write(os.path.join(folder, file),
+                           os.path.relpath(os.path.join(folder, file), original),
+                           compress_type=zipfile.ZIP_DEFLATED)
+        for dirs in empty_dirs:
+            zif = zipfile.ZipInfo(dirs + "/")
+            zips.writestr(zif, '')
+
+    return destination
