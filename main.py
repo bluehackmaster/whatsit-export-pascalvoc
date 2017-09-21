@@ -1,8 +1,8 @@
 import os
 
-print(os.environ)
-
 from util.Pascal import Pascal
+
+print(os.environ)
 
 __project_id = None
 
