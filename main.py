@@ -8,6 +8,7 @@ __project_id = None
 
 try:
     __project_id = os.environ['PROJECT_ID'].replace('"', '')
+    print('__project_id::' + __project_id)
 except Exception as ex:
     print('Not defined project ID value::')
     print(ex)
