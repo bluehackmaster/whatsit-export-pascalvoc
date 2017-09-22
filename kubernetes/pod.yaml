@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: whatsit-export-pascalvoc
+  namespace: whatsit
+  labels:
+    name: whatsit-export-pascalvoc
+spec:
+  containers:
+    name: whatsit-export-pascalvoc
+    image: whatsit-export-pascalvoc
+    ports:
+      containerPort: 6379
