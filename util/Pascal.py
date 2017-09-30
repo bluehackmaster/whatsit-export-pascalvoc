@@ -51,9 +51,9 @@ class Pascal:
                 delete_file(save_location)
                 for label in label_sets:
                     train, val = make_train_and_val(label_sets[label])
-                    write_file(path.join(data_set_path, 'ImageSets/Main/' + label + '_train.txt'),
+                    write_file(path.join(data_set_path, 'ImageSets/Main/' + 'train.txt'),
                                make_image_sets(train))
-                    write_file(path.join(data_set_path, 'ImageSets/Main/' + label + '_val.txt'), make_image_sets(val))
+                    write_file(path.join(data_set_path, 'ImageSets/Main/' + 'val.txt'), make_image_sets(val))
 
         # Creating a 'label_map.pbtxt' fileR
         write_file(path.join(project_path, 'data/label_map.pbtxt'), make_label_map(labels))
